@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #202124;
+    --muted: #5f6368;
+    --line: #dadce0;
+    --selected: #e8f0fe;
+    --accent: #1a73e8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #202124;
+      --fg: #e8eaed;
+      --muted: #9aa0a6;
+      --line: #3c4043;
+      --selected: #394457;
+      --accent: #8ab4f8;
+    }
+  }
+  body {
+    width: 360px;
+    margin: 0;
+    padding: 12px;
+    background: var(--bg);
+    color: var(--fg);
+    font: 13px/1.4 system-ui, sans-serif;
+  }
+  .page {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .status {
+    margin: 2px 0 8px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--fg);
+    font: inherit;
+  }
+  input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+  ul {
+    max-height: 320px;
+    margin: 8px 0 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+  }
+  li {
+    padding: 5px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  li.selected {
+    background: var(--selected);
+  }
+  .parent {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .hint {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+  <div id="page" class="page"></div>
+  <div id="status" class="status"></div>
+  <input id="query" type="search" placeholder="フォルダを検索" autocomplete="off">
+  <ul id="folders"></ul>
+  <div class="hint">↑↓ 選択　Enter 登録　Esc 閉じる</div>
+  <script src="popup.js"></script>
+</body>
+</html>

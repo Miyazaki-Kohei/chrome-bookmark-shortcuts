@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "Bookmark Toggle",
+  "name": "ブックマーク削除",
   "version": "1.0.0",
-  "description": "ショートカット1つで、表示中のページのブックマークを追加・削除する",
+  "description": "ショートカット1つで、表示中のページのブックマークを削除する",
   "permissions": ["bookmarks", "activeTab"],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "ブックマークを追加・削除（⌥⇧B）",
+    "default_title": "ブックマークから削除（⌥⇧X）",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png"
@@ -21,11 +21,11 @@
     "128": "icons/icon128.png"
   },
   "commands": {
-    "toggle-bookmark": {
+    "remove-bookmark": {
       "suggested_key": {
-        "default": "Alt+Shift+B"
+        "default": "Alt+Shift+X"
       },
-      "description": "表示中のページのブックマークを追加・削除する"
+      "description": "表示中のページのブックマークを削除する"
     }
   }
 }
