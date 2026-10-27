@@ -62,6 +62,9 @@
     list-style: none;
   }
   li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 5px 8px;
     border-radius: 6px;
     cursor: pointer;
@@ -69,10 +72,31 @@
   li.selected {
     background: var(--selected);
   }
+  .name {
+    flex: 1;
+    min-width: 0;
+  }
   .parent {
     display: block;
     color: var(--muted);
     font-size: 11px;
+  }
+  .pin {
+    padding: 0 2px;
+    border: 0;
+    background: none;
+    font-size: 12px;
+    cursor: pointer;
+    filter: grayscale(1);
+    opacity: 0;
+  }
+  li:hover .pin,
+  li.selected .pin {
+    opacity: 0.4;
+  }
+  li .pin.on {
+    filter: none;
+    opacity: 1;
   }
   .hint {
     margin-top: 8px;
@@ -86,7 +110,7 @@
   <div id="status" class="status"></div>
   <input id="query" type="search" placeholder="フォルダを検索" autocomplete="off">
   <ul id="folders"></ul>
-  <div class="hint">↑↓ 選択　Enter 登録　Esc 閉じる</div>
+  <div class="hint">↑↓ 選択　Enter 登録　Esc 閉じる　📌 一番上に固定</div>
   <script src="popup.js"></script>
 </body>
 </html>

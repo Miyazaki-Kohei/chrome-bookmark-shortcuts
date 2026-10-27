@@ -1,5 +1,6 @@
 // フォルダを選んで、表示中のページをブックマークに追加する。登録済みなら選んだフォルダへ移動する
 
+const PINNED_KEY = "pinnedFolderIds";
 const RECENT_KEY = "recentFolderIds";
 const RECENT_MAX = 10;
 
@@ -10,7 +11,10 @@ const $list = document.getElementById("folders");
 
 let tab;
 let existing = []; // このページの既存のブックマーク
-let folders = []; // { id, title, parentPath, path, folderType }
+let allFolders = []; // { id, title, parentPath, path, folderType }（ツリー順）
+let folders = []; // allFolders を表示順に並べたもの
+let pinned = []; // 固定したフォルダの id
+let recent = []; // 最近使ったフォルダの id
 let shown = [];
 let selected = 0;
 let saving = false;
@@ -32,35 +36,57 @@ function collectFolders(node, parents, out) {
   return out;
 }
 
-// 最近使ったフォルダ → 「その他のブックマーク」 → 残りをツリー順
-function orderFolders(all, recentIds) {
+// 固定したフォルダ → 最近使ったフォルダ → 「その他のブックマーク」 → 残りをツリー順
+function orderFolders(all, pinnedIds, recentIds) {
   const byId = new Map(all.map((f) => [f.id, f]));
-  const first = recentIds.map((id) => byId.get(id)).filter(Boolean);
+  const first = [...new Set([...pinnedIds, ...recentIds])].map((id) => byId.get(id)).filter(Boolean);
   const other = all.find((f) => f.folderType === "other");
   if (other && !first.includes(other)) first.push(other);
   return [...first, ...all.filter((f) => !first.includes(f))];
 }
 
-function render() {
+// keep を渡すと、並びが変わってもそのフォルダを選んだままにする
+function render(keep) {
   const q = $query.value.trim().toLowerCase();
   shown = q ? folders.filter((f) => f.path.toLowerCase().includes(q)) : folders;
+  if (keep) selected = Math.max(shown.indexOf(keep), 0);
   selected = Math.min(selected, Math.max(shown.length - 1, 0));
   $list.replaceChildren(
     ...shown.map((f, i) => {
       const li = document.createElement("li");
       li.className = i === selected ? "selected" : "";
-      li.append(f.title);
+      const name = document.createElement("div");
+      name.className = "name";
+      name.append(f.title);
       if (f.parentPath) {
         const parent = document.createElement("span");
         parent.className = "parent";
         parent.textContent = f.parentPath;
-        li.append(parent);
+        name.append(parent);
       }
+      const isPinned = pinned.includes(f.id);
+      const pin = document.createElement("button");
+      pin.className = isPinned ? "pin on" : "pin";
+      pin.title = isPinned ? "固定を外す" : "一番上に固定";
+      pin.textContent = "📌";
+      pin.addEventListener("mousedown", (e) => e.preventDefault()); // 検索欄のフォーカスを保つ
+      pin.addEventListener("click", (e) => {
+        e.stopPropagation();
+        togglePin(f);
+      });
+      li.append(name, pin);
       li.addEventListener("click", () => save(f));
       return li;
     }),
   );
   $list.children[selected]?.scrollIntoView({ block: "nearest" });
+}
+
+async function togglePin(folder) {
+  pinned = pinned.includes(folder.id) ? pinned.filter((id) => id !== folder.id) : [...pinned, folder.id];
+  await chrome.storage.local.set({ [PINNED_KEY]: pinned });
+  folders = orderFolders(allFolders, pinned, recent);
+  render(folder);
 }
 
 function move(delta) {
@@ -78,7 +104,6 @@ async function save(folder) {
     } else if (!existing.some((b) => b.parentId === folder.id)) {
       await chrome.bookmarks.move(existing[0].id, { parentId: folder.id });
     }
-    const { [RECENT_KEY]: recent = [] } = await chrome.storage.local.get(RECENT_KEY);
     await chrome.storage.local.set({
       [RECENT_KEY]: [folder.id, ...recent.filter((id) => id !== folder.id)].slice(0, RECENT_MAX),
     });
@@ -121,12 +146,14 @@ async function init() {
   $page.textContent = tab.title || tab.url;
   existing = await chrome.bookmarks.search({ url: tab.url });
   const [root] = await chrome.bookmarks.getTree();
-  const all = collectFolders(root, [], []);
-  const pathOf = (id) => all.find((f) => f.id === id)?.path ?? "?";
+  allFolders = collectFolders(root, [], []);
+  const pathOf = (id) => allFolders.find((f) => f.id === id)?.path ?? "?";
   $status.textContent =
     existing.length === 0 ? "未登録" : `登録済み: ${existing.map((b) => pathOf(b.parentId)).join("、")}`;
-  const { [RECENT_KEY]: recent = [] } = await chrome.storage.local.get(RECENT_KEY);
-  folders = orderFolders(all, recent);
+  const stored = await chrome.storage.local.get([PINNED_KEY, RECENT_KEY]);
+  pinned = stored[PINNED_KEY] ?? [];
+  recent = stored[RECENT_KEY] ?? [];
+  folders = orderFolders(allFolders, pinned, recent);
   render();
   $query.focus();
 }
